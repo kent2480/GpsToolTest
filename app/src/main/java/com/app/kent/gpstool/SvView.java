@@ -14,6 +14,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.View;
 
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 
 /**
@@ -23,6 +24,7 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     private static final String TAG = "SvView";
     private Context mContext;
     private LocationManager mLocationManager;
+    private LocationManager mLM;
     private GpsStatus mGpsSatus;
     private Iterable<GpsSatellite> gs;
     private int NUM_SATELLITES = 32;
@@ -36,44 +38,36 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     private boolean[] mUsedInFixMask = new boolean[NUM_SATELLITES];
 
 
-    private StringBuilder mStr = new StringBuilder();
-    private Paint mLoadPaint;
-    private Paint mAddress;
-    private Paint mSystemPaint;
+    private SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("HH:mm:ss");
+    private String sv, cn;
+    private String lat, lon, altitude, speed, accuracy, bearing;
+    private String time;
+    private Paint mPaint, mAddress, mAltAcc, mTime;
 
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == 1) {
-                Log.d(TAG, "handleMessage");
-
                 updateDisplay();
                 Message m = obtainMessage(1);
                 sendMessageDelayed(m, 1000);
             }
         }
     };
+    private boolean isAttach = false;
 
     public SvView(Context context) {
         super(context);
         mContext = context;
-    }
-
-
-    public void startGps() {
-        Log.d(TAG, "startGps");
         mLocationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         mLocationManager.addGpsStatusListener(this);
         mGpsSatus = mLocationManager.getGpsStatus(null);
 
-        setPadding(4, 4, 4, 4);
-
-
+        setPadding(4, 4, 0, 0);
 
         float density = mContext.getResources().getDisplayMetrics().density;
         Log.d(TAG, "density = " + density);
-        int textSize = 10;
+        int textSize;
         if (density < 1) {
             textSize = 9;
         } else {
@@ -83,50 +77,75 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
             }
         }
 
-        mLoadPaint = new Paint();
-        mLoadPaint.setAntiAlias(true);
-        mLoadPaint.setTextSize(textSize);
-        mLoadPaint.setARGB(255, 255, 255, 255);
+        mPaint = new Paint();
+        mPaint.setAntiAlias(true);
+        mPaint.setTextSize(textSize);
+        mPaint.setARGB(255, 255, 255, 255);
 
         mAddress = new Paint();
         mAddress.setAntiAlias(true);
         mAddress.setTextSize(textSize);
         mAddress.setARGB(255, 128, 255, 128);
 
-        mSystemPaint = new Paint();
-        mSystemPaint.setARGB(0x80, 0xff, 0, 0);
-        mSystemPaint.setShadowLayer(2, 0, 0, 0xff000000);
+        mAltAcc = new Paint();
+        mAltAcc.setAntiAlias(true);
+        mAltAcc.setTextSize(textSize);
+        mAltAcc.setARGB(255, 255, 128, 128);
 
+        mTime = new Paint();
+        mTime.setAntiAlias(true);
+        mTime.setTextSize(textSize);
+        mTime.setARGB(255, 128, 128, 255);
+        mTime.setShadowLayer(2, 0, 0, 0xff000000);
+    }
+
+
+    public void startGps() {
+        Log.d(TAG, "startGps");
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         updateDisplay();
     }
 
     public void stopGps() {
-        Log.d(TAG, "stopGps");
         mLocationManager.removeUpdates(this);
-        mLocationManager.removeGpsStatusListener(this);
+        if(isAttach) {
+            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this    );
+        }
+        //mLocationManager.removeGpsStatusListener(this);
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        isAttach = true;
         Log.d(TAG, "onAttachedToWindow");
+        mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
         mHandler.sendEmptyMessage(1);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        isAttach = false;
         Log.d(TAG, "onDetachedFromWindow");
+//        mLocationManager.removeUpdates(this);
         mHandler.removeMessages(1);
     }
 
     @Override
     public void onDraw(Canvas canvas) {
-        Log.d(TAG, "onDraw: mStr = " + mStr.toString());
+        int y = getPaddingTop() - (int)mPaint.ascent();
 
-        canvas.drawText(mStr.toString(), 30.0f, 30.0f, mLoadPaint);
-        canvas.drawText(mStr.toString(), 60.0f, 60.0f, mAddress);
-        mStr.delete(0, mStr.length());
+        if(lat != null && !lat.equals("") && lon != null && !lon.equals("")) {
+            canvas.drawText("Lat: " + lat + ", Lon: " + lon, 0, y, mAddress);
+            canvas.drawText("Alt: " + altitude + ", Acc: " + accuracy, 0, 2*y, mAltAcc);
+            canvas.drawText("Time: " + time, 0, 3*y, mTime);
+            canvas.drawText("Total SV: " + sv + ", AVG: " + cn, 0, 4*y, mPaint);
+        } else if(sv != null && !sv.equals("") && cn != null && !cn.equals("")){
+            canvas.drawText("Total SV: " + sv + ", AVG: " + cn, 0, y, mPaint);
+        } else {
+            canvas.drawText("Total SV:  , AVG: ", 0, y, mPaint);
+        }
     }
 
     public void updateDisplay() {
@@ -135,7 +154,6 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
 
     @Override
     public void onGpsStatusChanged(int event) {
-        Log.d(TAG, "onGpsStatusChanged: " + event);
         int count = 0;
         float temp = 0;
         float avg;
@@ -166,17 +184,55 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
                 for (int i = 0; i < count; i++) {
                     temp += mSnrs[i];
                 }
-                avg = temp / count;
-                mStr.append("Total SV: " + count + ", AVG = " + avg);
-                Log.d(TAG, "mStr = " + mStr.toString());
+                if (count > 0) {
+                    avg = temp / count;
+                    sv = String.valueOf(count);
+                    cn = doubleToString(avg, 1);
+                }
                 break;
         }
     }
 
+    private static String doubleToString(double value, int decimals) {
+        String result = Double.toString(value);
+        // truncate to specified number of decimal places
+        int dot = result.indexOf('.');
+        if (dot > 0) {
+            int end = dot + decimals + 1;
+            if (end < result.length()) {
+                result = result.substring(0, end);
+            }
+        }
+        return result;
+    }
 
     @Override
     public void onLocationChanged(Location location) {
+        lat = doubleToString(location.getLatitude(), 4);
+        lon = doubleToString(location.getLongitude(), 4);
 
+        time = mSimpleDateFormat.format(location.getTime());
+
+        //altitude = location.getAltitude();
+        altitude = doubleToString(location.getAltitude(), 1);
+
+
+        //accuracy = location.getAccuracy();
+        accuracy = doubleToString(location.getAccuracy(), 1);
+
+        //bearing = location.getBearing();
+        bearing = doubleToString(location.getBearing(), 1);
+
+        //speed = location.getSpeed();
+        speed = doubleToString(location.getSpeed() * 3.6, 1);
+//
+//        Log.d(TAG, "lat = " + lat);
+//        Log.d(TAG, "lon = " + lon);
+//        Log.d(TAG, "time = " + time);
+//        Log.d(TAG, "altitude = " + altitude);
+//        Log.d(TAG, "accuracy = " + accuracy);
+//        Log.d(TAG, "bearing = " + bearing);
+//        Log.d(TAG, "speed = " + speed);
     }
 
     @Override

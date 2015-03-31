@@ -37,6 +37,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
 
         initView();
         setListener();
+        bindService(new Intent(MainActivity.this, GpsService.class), mConnection,
+                Context.BIND_AUTO_CREATE);
 
     }
 
@@ -52,16 +54,14 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked) {
                     if(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                        bindService(new Intent(MainActivity.this, GpsService.class), mConnection,
-                                Context.BIND_AUTO_CREATE);
+                        sendMessageToService(GpsService.MSG_START_GPS);
                     } else {
                         Toast.makeText(MainActivity.this, "Please turn on GPS", Toast.LENGTH_SHORT)
                                 .show();
                         mSwitch.setChecked(false);
                     }
                 } else {
-                    unbindService(mConnection);
-                    mCheckBox.setChecked(false);
+                    sendMessageToService(GpsService.MSG_STOP_GPS);
                 }
             }
         });
@@ -109,15 +109,10 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         mServiceMessenger = null;
     }
 
-    /**
-     * Handle incoming messages from MyService
-     */
     private class IncomingMessageHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            // Log.d(LOGTAG,"IncomingHandler:handleMessage");
             switch (msg.what) {
-
                 default:
                     super.handleMessage(msg);
             }
@@ -133,9 +128,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
