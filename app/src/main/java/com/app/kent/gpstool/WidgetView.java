@@ -1,74 +1,71 @@
 package com.app.kent.gpstool;
 
-import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.util.Log;
 import android.widget.RemoteViews;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Kent_Zheng on 2015/3/31.
  */
 public class WidgetView extends AppWidgetProvider {
     private final static String TAG = "WidgetView";
-    private Context mContext;
     private static LocationManager mLM;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         Log.d(TAG, "onUpdate");
-        mContext = context;
 
-        mLM = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-        Intent intent = new Intent(mContext, UpdateService.class);
-        mContext.startService(intent);
-
-        super.onUpdate(mContext, appWidgetManager, appWidgetIds);
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new UpdateService(context, appWidgetManager), 1, 30000);
+        super.onUpdate(context, appWidgetManager, appWidgetIds);
     }
 
-    public static class UpdateService extends Service implements LocationListener {
+    public class UpdateService extends TimerTask implements LocationListener {
+        private LocationManager mLocationManager;
         private String lat, lon, altitude, speed, accuracy, bearing;
         private String time;
-        private SimpleDateFormat mSimpleDateFormat;
+        private SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
+        private RemoteViews remoteViews;
+        private AppWidgetManager appWidgetManager;
+        private ComponentName thisWidget;
 
-        @Override
-        public IBinder onBind(Intent arg0) {
-            return null;
+
+        UpdateService(Context context,  AppWidgetManager appWidgetManager) {
+            remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget);
+            thisWidget = new ComponentName(context, WidgetView.class);
+            this.appWidgetManager = appWidgetManager;
+            mLocationManager = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
         }
 
         @Override
-        public void onStart(Intent intent, int startId) {
-            super.onStart(intent, startId);
-            Log.d(TAG, "onStart");
-            mLM.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
-            mSimpleDateFormat = new SimpleDateFormat("hh:mm:ss");
-            RemoteViews updateViews = new RemoteViews(this.getPackageName(), R.layout.widget);
-
-
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm");
-            updateViews.setTextViewText(R.id.tv_widget, "" + sdf.format(new Date()));
-//            if (lat != null && !lat.equals("") && lon != null && !lon.equals("")) {
-//                updateViews.setTextViewText(R.id.tv_widget, "Lat: " + lat + ", Lon:" + lon);
-//            } else {
-//                updateViews.setTextViewText(R.id.tv_widget, "Lat: , Lon:");
-//            }
-            ComponentName thisWidget = new ComponentName(this, WidgetView.class);
-            AppWidgetManager manager = AppWidgetManager.getInstance(this);
-            manager.updateAppWidget(thisWidget, updateViews);
+        public void run() {
+            Log.d(TAG, "run");
+            updateView();
         }
 
-        private static String doubleToString(double value, int decimals) {
+        private void updateView() {
+            if (lat != null && !lat.equals("") && lon != null && !lon.equals("")) {
+                remoteViews.setTextViewText(R.id.tv_widget, "Lat: " + lat + ", Lon:" + lon);
+            } else {
+                remoteViews.setTextViewText(R.id.tv_widget, "Lat: , Lon:");
+            }
+            appWidgetManager.updateAppWidget(thisWidget, remoteViews);
+        }
+
+
+        private String doubleToString(double value, int decimals) {
             String result = Double.toString(value);
             // truncate to specified number of decimal places
             int dot = result.indexOf('.');
@@ -87,7 +84,7 @@ public class WidgetView extends AppWidgetProvider {
             lat = doubleToString(location.getLatitude(), 4);
             lon = doubleToString(location.getLongitude(), 4);
 
-            time = mSimpleDateFormat.format(location.getTime());
+            time = sdf.format(location.getTime());
 
             //altitude = location.getAltitude();
             altitude = doubleToString(location.getAltitude(), 1);
@@ -109,6 +106,8 @@ public class WidgetView extends AppWidgetProvider {
             Log.d(TAG, "accuracy = " + accuracy);
             Log.d(TAG, "bearing = " + bearing);
             Log.d(TAG, "speed = " + speed);
+
+            updateView();
         }
 
         @Override

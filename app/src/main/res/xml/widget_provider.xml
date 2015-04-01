@@ -4,4 +4,4 @@
                     android:minHeight="72dp"
                     android:minWidth="72dp"
                     android:previewImage="@android:drawable/ic_menu_mylocation"
-                    android:updatePeriodMillis="60000"/>
+                    android:updatePeriodMillis="30000"/>

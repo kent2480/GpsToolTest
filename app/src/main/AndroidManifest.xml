@@ -24,17 +24,14 @@
             android:name=".WidgetView"
             android:label="@string/app_name" >
             <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" >
-                </action>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
 
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_provider" >
-            </meta-data>
+                android:resource="@xml/widget_provider" />
         </receiver>
 
-        <service android:name=".WidgetView$UpdateService" />
 
         <service
             android:name=".GpsService"
