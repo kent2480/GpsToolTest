@@ -1,5 +1,6 @@
 package com.app.kent.gpstool;
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -131,7 +132,13 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_about) {
+            Log.d(TAG, "onOptionItemSelected: " + id);
+            AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+            dialog.setTitle("About:");
+            dialog.setMessage(getString(R.string.message));
+            dialog.setCancelable(true);
+            dialog.show();
             return true;
         }
 

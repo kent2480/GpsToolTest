@@ -20,14 +20,14 @@ import java.util.TimerTask;
  */
 public class WidgetView extends AppWidgetProvider {
     private final static String TAG = "WidgetView";
-    private static LocationManager mLM;
+    private final int UPDATE_WIDGET_TIME = 15 * 60 * 1000; // 15 min
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         Log.d(TAG, "onUpdate");
 
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new UpdateService(context, appWidgetManager), 1, 30000);
+        timer.scheduleAtFixedRate(new UpdateService(context, appWidgetManager), 1, UPDATE_WIDGET_TIME);
         super.onUpdate(context, appWidgetManager, appWidgetIds);
     }
 
@@ -39,6 +39,7 @@ public class WidgetView extends AppWidgetProvider {
         private RemoteViews remoteViews;
         private AppWidgetManager appWidgetManager;
         private ComponentName thisWidget;
+        private StringBuilder mStringBuilder;
 
 
         UpdateService(Context context,  AppWidgetManager appWidgetManager) {
@@ -56,18 +57,35 @@ public class WidgetView extends AppWidgetProvider {
         }
 
         private void updateView() {
+            mStringBuilder = new StringBuilder();
             if (lat != null && !lat.equals("") && lon != null && !lon.equals("")) {
-                remoteViews.setTextViewText(R.id.tv_widget, "Lat: " + lat + ", Lon:" + lon);
+                mStringBuilder.append("Lat:" + lat + ", Lon:" + lon);
             } else {
-                remoteViews.setTextViewText(R.id.tv_widget, "Lat: , Lon:");
+                mStringBuilder.append("Unknow Location");
             }
+
+            if(altitude != null && !altitude.equals("")) {
+                mStringBuilder.append("\n" + "Alt:" + altitude);
+            }
+
+            if(accuracy != null && !accuracy.equals("")) {
+                mStringBuilder.append(", Acc:" + accuracy);
+            }
+
+            if(time != null && !time.equals("")) {
+                mStringBuilder.append("\n" + "Time:" + time);
+            }
+
+            Log.d(TAG, "mStringBuilder = " + mStringBuilder);
+
+            remoteViews.setTextViewText(R.id.tv_widget, mStringBuilder.toString());
             appWidgetManager.updateAppWidget(thisWidget, remoteViews);
         }
 
 
-        private String doubleToString(double value, int decimals) {
+        private String doubleToString(double value, int decimals, int width) {
+            String empty = " ";
             String result = Double.toString(value);
-            // truncate to specified number of decimal places
             int dot = result.indexOf('.');
             if (dot > 0) {
                 int end = dot + decimals + 1;
@@ -75,29 +93,28 @@ public class WidgetView extends AppWidgetProvider {
                     result = result.substring(0, end);
                 }
             }
+
+            if(width > 0) {
+                width = width  - result.length();
+                for (int i = 0; i < width; i++) {
+                    result = empty + result;
+                }
+            }
+
             return result;
         }
 
         @Override
         public void onLocationChanged(Location location) {
             Log.d(TAG, "Widget: onLocationChanged");
-            lat = doubleToString(location.getLatitude(), 4);
-            lon = doubleToString(location.getLongitude(), 4);
+            lat = doubleToString(location.getLatitude(), 4, 9);
+            lon = doubleToString(location.getLongitude(), 4, 9);
 
             time = sdf.format(location.getTime());
-
-            //altitude = location.getAltitude();
-            altitude = doubleToString(location.getAltitude(), 1);
-
-
-            //accuracy = location.getAccuracy();
-            accuracy = doubleToString(location.getAccuracy(), 1);
-
-            //bearing = location.getBearing();
-            bearing = doubleToString(location.getBearing(), 1);
-
-            //speed = location.getSpeed();
-            speed = doubleToString(location.getSpeed() * 3.6, 1);
+            altitude = doubleToString(location.getAltitude(), 1, 9);
+            accuracy = doubleToString(location.getAccuracy(), 1, 9);
+            bearing = doubleToString(location.getBearing(), 1, 9);
+            speed = doubleToString(location.getSpeed() * 3.6, 1, -1);
 
             Log.d(TAG, "lat = " + lat);
             Log.d(TAG, "lon = " + lon);

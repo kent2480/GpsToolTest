@@ -24,7 +24,6 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     private static final String TAG = "SvView";
     private Context mContext;
     private LocationManager mLocationManager;
-    private LocationManager mLM;
     private GpsStatus mGpsSatus;
     private Iterable<GpsSatellite> gs;
     private int NUM_SATELLITES = 32;
@@ -109,7 +108,7 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     public void stopGps() {
         mLocationManager.removeUpdates(this);
         if(isAttach) {
-            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this    );
+            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
         }
         //mLocationManager.removeGpsStatusListener(this);
     }
@@ -195,7 +194,6 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
 
     private static String doubleToString(double value, int decimals) {
         String result = Double.toString(value);
-        // truncate to specified number of decimal places
         int dot = result.indexOf('.');
         if (dot > 0) {
             int end = dot + decimals + 1;
@@ -212,41 +210,21 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
         lon = doubleToString(location.getLongitude(), 4);
 
         time = mSimpleDateFormat.format(location.getTime());
-
-        //altitude = location.getAltitude();
         altitude = doubleToString(location.getAltitude(), 1);
-
-
-        //accuracy = location.getAccuracy();
         accuracy = doubleToString(location.getAccuracy(), 1);
-
-        //bearing = location.getBearing();
         bearing = doubleToString(location.getBearing(), 1);
-
-        //speed = location.getSpeed();
         speed = doubleToString(location.getSpeed() * 3.6, 1);
-//
-//        Log.d(TAG, "lat = " + lat);
-//        Log.d(TAG, "lon = " + lon);
-//        Log.d(TAG, "time = " + time);
-//        Log.d(TAG, "altitude = " + altitude);
-//        Log.d(TAG, "accuracy = " + accuracy);
-//        Log.d(TAG, "bearing = " + bearing);
-//        Log.d(TAG, "speed = " + speed);
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-
     }
 }
