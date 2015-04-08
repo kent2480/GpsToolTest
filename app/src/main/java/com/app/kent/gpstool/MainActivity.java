@@ -25,7 +25,7 @@ import android.widget.Toast;
 public class MainActivity extends ActionBarActivity implements ServiceConnection{
     private static final String TAG = "MainActivity";
     private Switch mSwitch;
-    private CheckBox mCheckBox;
+    private CheckBox mCbView, mCbDisplay;
     private LocationManager mLocationManager;
     private Messenger mServiceMessenger = null;
     private ServiceConnection mConnection = this;
@@ -45,7 +45,8 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
 
     private void initView() {
         mSwitch = (Switch) findViewById(R.id.switch_gps);
-        mCheckBox = (CheckBox) findViewById(R.id.cb_show);
+        mCbView = (CheckBox) findViewById(R.id.cb_show);
+        mCbDisplay = (CheckBox) findViewById(R.id.cb_display);
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
     }
 
@@ -67,16 +68,29 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
             }
         });
 
-        mCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        mCbView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked) {
+                if (isChecked) {
                     sendMessageToService(GpsService.MSG_DISPLAY_SV);
                 } else {
                     sendMessageToService(GpsService.MSG_STOP_DISPLAY_SV);
                 }
             }
         });
+
+        mCbDisplay.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    sendMessageToService(GpsService.MSG_DISPLAY_BIG);
+                } else {
+                    sendMessageToService(GpsService.MSG_DISPLAY_SMALL);
+                }
+            }
+        });
+
+
     }
 
     private void sendMessageToService(int value) {
@@ -133,7 +147,6 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_about) {
-            Log.d(TAG, "onOptionItemSelected: " + id);
             AlertDialog.Builder dialog = new AlertDialog.Builder(this);
             dialog.setTitle("About:");
             dialog.setMessage(getString(R.string.message));

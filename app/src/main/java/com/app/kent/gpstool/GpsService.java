@@ -20,6 +20,8 @@ public class GpsService extends Service {
     public static final int MSG_STOP_DISPLAY_SV = 2;
     public static final int MSG_START_GPS = 3;
     public static final int MSG_STOP_GPS = 4;
+    public static final int MSG_DISPLAY_BIG = 5;
+    public static final int MSG_DISPLAY_SMALL = 6;
     private final Messenger mMessenger = new Messenger(new IncomingMessageHandler());
 
     public SvView mSvView = null;
@@ -76,6 +78,12 @@ public class GpsService extends Service {
         }
     }
 
+    public void changeDisplaySize(boolean isBig) {
+        if(mSvView != null) {
+            mSvView.changeDisplaySize(isBig);
+        }
+    }
+
     private class IncomingMessageHandler extends Handler {
 
         @Override
@@ -92,6 +100,12 @@ public class GpsService extends Service {
                     break;
                 case MSG_STOP_GPS:
                     stopGps();
+                    break;
+                case MSG_DISPLAY_BIG:
+                    changeDisplaySize(true);
+                    break;
+                case MSG_DISPLAY_SMALL:
+                    changeDisplaySize(false);
                     break;
                 default:
                     super.handleMessage(msg);

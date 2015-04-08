@@ -116,13 +116,13 @@ public class WidgetView extends AppWidgetProvider {
             bearing = doubleToString(location.getBearing(), 1, 9);
             speed = doubleToString(location.getSpeed() * 3.6, 1, -1);
 
-            Log.d(TAG, "lat = " + lat);
-            Log.d(TAG, "lon = " + lon);
-            Log.d(TAG, "time = " + time);
-            Log.d(TAG, "altitude = " + altitude);
-            Log.d(TAG, "accuracy = " + accuracy);
-            Log.d(TAG, "bearing = " + bearing);
-            Log.d(TAG, "speed = " + speed);
+//            Log.d(TAG, "lat = " + lat);
+//            Log.d(TAG, "lon = " + lon);
+//            Log.d(TAG, "time = " + time);
+//            Log.d(TAG, "altitude = " + altitude);
+//            Log.d(TAG, "accuracy = " + accuracy);
+//            Log.d(TAG, "bearing = " + bearing);
+//            Log.d(TAG, "speed = " + speed);
 
             updateView();
         }
