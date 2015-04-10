@@ -31,14 +31,9 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     private GpsStatus mGpsSatus;
     private Iterable<GpsSatellite> gs;
     private int NUM_SATELLITES = 32;
-    private int drawCount = 0;
-    private int textSize = 15;
-    private boolean isAttach = false;
-    private float LINE_STROKE_WDTH = 1.0f;
-    // if true => display 6 cn address. Otherwise 12 cn address;
+    private int drawCount = 0, textSize = 20 , scale = 1;
     private boolean isBigSize = false;
-    private int scale = 1;
-
+    private boolean isAttach = false;
 
     private ArrayList<Float> mTop4;
     private int[] mPrns = new int[NUM_SATELLITES];
@@ -50,10 +45,8 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     private boolean[] mUsedInFixMask = new boolean[NUM_SATELLITES];
 
     private SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("HH:mm:ss");
-    private String sv, cnAll, cn4;
-    private String lat, lon, altitude, speed, accuracy, bearing;
-    private String time;
-    private Paint mGraph, mCircle, mLine, mPathLine, mPaint, mAddress, mAltAcc, mTime;
+    private String sv, cnAll, cn4, lat, lon, altitude, accuracy, time;
+    private Paint mGraph, mCircle, mLine, mPaint, mAddress, mAltAcc;
     private Path mPath;
     private int startLineX = 0, startLineY = 1, endLineX = 400, endLineY = 101, lineSpace = 20,
             pointSpace = 80;
@@ -70,6 +63,7 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     };
 
 
+
     public SvView(Context context) {
         super(context);
         mContext = context;
@@ -77,12 +71,12 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
         mLocationManager.addGpsStatusListener(this);
         mGpsSatus = mLocationManager.getGpsStatus(null);
 
-        setPadding(4, 4, 0, 0);
+        //setPadding(4, 4, 0, 0);
 
         mGraph = new Paint();
         mGraph.setAntiAlias(true);
         mGraph.setStyle(Paint.Style.STROKE);
-        mGraph.setStrokeWidth(LINE_STROKE_WDTH);
+        mGraph.setStrokeWidth(1.0f);
         mGraph.setARGB(255, 128, 128, 128);
 
         mCircle = new Paint();
@@ -96,12 +90,6 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
         mLine.setStrokeWidth(2.0f);
         mLine.setARGB(255, 128, 255, 128);
         mLine.setPathEffect(new CornerPathEffect(5)); //affect line address
-
-        mPathLine = new Paint();
-        mPathLine.setAntiAlias(true);
-        mPathLine.setStyle(Paint.Style.STROKE);
-        mPathLine.setStrokeWidth(4.0f);
-        mPathLine.setARGB(255, 255, 128, 128);
 
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
@@ -118,11 +106,6 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
         mAltAcc.setTextSize(textSize);
         mAltAcc.setARGB(255, 255, 128, 128);
 
-        mTime = new Paint();
-        mTime.setAntiAlias(true);
-        mTime.setTextSize(textSize);
-        mTime.setARGB(255, 128, 128, 255);
-
         mPath = new Path();
 
         checkDisplay();
@@ -135,19 +118,19 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
 
     public void stopGps() {
         mLocationManager.removeUpdates(this);
-        if(isAttach) {
+        if (isAttach) {
             mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
         }
         //mLocationManager.removeGpsStatusListener(this);
     }
 
-    public  void changeDisplaySize(boolean isBig) {
+    public void changeDisplaySize(boolean isBig) {
         this.isBigSize = isBig;
         checkDisplay();
     }
 
     public void checkDisplay() {
-        if(isBigSize) {
+        if (isBigSize) {
             scale = 2;
         } else {
             scale = 1;
@@ -180,46 +163,42 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
 
     @Override
     public void onDraw(Canvas canvas) {
-        int y = getPaddingTop() - (int)mPaint.ascent();
+        int y = getPaddingTop() - (int) mPaint.ascent();
 
         for (int i = 0; i < 6; i++) {
             canvas.drawLine(startLineX, startLineY + i * lineSpace,
-                            endLineX * scale, startLineY + i * lineSpace, mGraph);
+                    endLineX * scale, startLineY + i * lineSpace, mGraph);
         }
 
         mPath.reset();
 
-        if(cn4 != null) {
+        if (cn4 != null) {
             mTop4.set(drawCount, Float.parseFloat(cn4));
-            mPath.moveTo(startLineX, endLineY - mTop4.get(0)*2);
+            mPath.moveTo(startLineX, endLineY - mTop4.get(0) * 2);
 
             for (int i = 0; i <= drawCount; i++) {
-                mPath.lineTo(i * pointSpace, endLineY - mTop4.get(i)*2);
+                mPath.lineTo(i * pointSpace, endLineY - mTop4.get(i) * 2);
                 canvas.drawCircle(i * pointSpace, endLineY - mTop4.get(i) * 2, 5.0f, mCircle);
 
-                if(drawCount == (5  * scale) && i < (drawCount  * scale)) {
+                if (drawCount == (5 * scale) && i < (drawCount * scale)) {
                     mTop4.set(i, mTop4.get(i + 1));
                 }
             }
 
-
-            if(drawCount < (5  * scale)) {
+            if (drawCount < (5 * scale)) {
                 drawCount++;
             }
         }
 
-//        Log.d(TAG, "mTop4 = " + mTop4 + ", drawCount = " + drawCount);
-
-
         canvas.drawPath(mPath, mLine);
 
-        if(lat != null && !lat.equals("") && lon != null && !lon.equals("")) {
+        if (lat != null && !lat.equals("") && lon != null && !lon.equals("")) {
             canvas.drawText("Lat: " + lat + ", Lon: " + lon, 0, endLineY + y, mAddress);
             canvas.drawText("Alt: " + altitude + ", Acc: " + accuracy + ", Time: " + time, 0,
-                    endLineY + 2*y, mAltAcc);
-            canvas.drawText("Total SV: " + sv + ", AVG: " + cnAll + ", Top4: " + cn4, 0, endLineY + 3*y,
+                    endLineY + 2 * y, mAltAcc);
+            canvas.drawText("Total SV: " + sv + ", AVG: " + cnAll + ", Top4: " + cn4, 0, endLineY + 3 * y,
                     mPaint);
-        } else if(sv != null && !sv.equals("") && cnAll != null && !cnAll.equals("")){
+        } else if (sv != null && !sv.equals("") && cnAll != null && !cnAll.equals("")) {
             canvas.drawText("Total SV: " + sv + ", AVG: " + cnAll + ", Top4: " + cn4, 0, endLineY + y,
                     mPaint);
         } else {
@@ -235,11 +214,12 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
     public void onGpsStatusChanged(int event) {
         int count = 0;
         float allSn = 0, top4 = 0;
-        float avg;
         switch (event) {
             case GpsStatus.GPS_EVENT_STARTED:
+                sv = cnAll = cn4 = "0";
                 break;
             case GpsStatus.GPS_EVENT_STOPPED:
+                sv = cnAll = cn4 = "0";
                 break;
             case GpsStatus.GPS_EVENT_FIRST_FIX:
                 break;
@@ -259,27 +239,27 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
                     mEphemerisMask[count] = mGpsSatelliteData.hasEphemeris();
                     mAlmanacMask[count] = mGpsSatelliteData.hasAlmanac();
                     mUsedInFixMask[count] = mGpsSatelliteData.usedInFix();
-
-//                    Log.d(TAG, "count: " + count + ", CN = " + mGpsSatelliteData.getSnr());
                     count++;
                 }
 
                 Arrays.sort(mSnrs);
                 for (int i = mSnrs.length - 1; i >= 0; i--) {
-//                    Log.d(TAG, "SN[" + i + "] = " + mSnrs[i]);
+                    if (mSnrs[i] != 0) {
+//                        Log.d(TAG, "SN[" + i + "] = " + mSnrs[i]);
+                    }
                     allSn += mSnrs[i];
 
-                    if((mSnrs.length - i) <= 4) {
-                       top4 += mSnrs[i];
+                    if ((mSnrs.length - i) <= 4) {
+                        top4 += mSnrs[i];
                     }
                 }
 
                 if (count > 0) {
-                    avg = allSn / count;
-                    top4 = top4 / 4;
                     sv = String.valueOf(count);
-                    cnAll = doubleToString(avg, 1);
-                    cn4 = doubleToString(top4, 1);
+                    cnAll = doubleToString(allSn / count, 1);
+                    cn4 = doubleToString( top4 / 4, 1);
+                } else {
+                    sv = cnAll = cn4 = "0";
                 }
                 break;
         }
@@ -305,8 +285,6 @@ public class SvView extends View implements LocationListener, GpsStatus.Listener
         time = mSimpleDateFormat.format(location.getTime());
         altitude = doubleToString(location.getAltitude(), 1);
         accuracy = doubleToString(location.getAccuracy(), 1);
-        bearing = doubleToString(location.getBearing(), 1);
-        speed = doubleToString(location.getSpeed() * 3.6, 1);
     }
 
     @Override

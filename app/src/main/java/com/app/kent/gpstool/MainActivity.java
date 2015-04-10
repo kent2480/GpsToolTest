@@ -89,9 +89,10 @@ public class MainActivity extends ActionBarActivity implements ServiceConnection
                 }
             }
         });
-
-
     }
+	
+	
+	
 
     private void sendMessageToService(int value) {
         try {
